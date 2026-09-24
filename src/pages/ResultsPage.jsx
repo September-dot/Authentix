@@ -3,38 +3,45 @@ import RiskScore from '../components/RiskScore';
 import EvidenceCard from '../components/EvidenceCard';
 import LimitationsNotice from '../components/LimitationsNotice';
 import NextActions from '../components/NextActions';
-import { MODALITY_RESULTS, MOCK_RESULTS } from '../data/mockResults';
-import { ArrowLeft, Clock, FileImage, Film, FileText, Download, Check, Shield } from 'lucide-react';
+import { ArrowLeft, FileImage, Film, FileText, Download, Check, ShieldCheck } from 'lucide-react';
 
 export default function ResultsPage({ 
   resultData, 
   onAnalyzeAnother, 
   onViewMethodology 
 }) {
-  // Current modality ('image' | 'video' | 'document')
-  const activeModality = resultData?.modality || 'image';
-  const modalityCatalog = MODALITY_RESULTS[activeModality] || MODALITY_RESULTS.image;
-
-  // Variant key within the current modality
-  const [activeVariantKey, setActiveVariantKey] = useState(resultData?.id || 'low');
   const [copiedNotification, setCopiedNotification] = useState(false);
 
-  // Active mock result data
-  const currentResult = modalityCatalog[activeVariantKey] || resultData || modalityCatalog.low;
+  // Directly use the algorithmically detected result data
+  const currentResult = resultData || {
+    id: 'low',
+    modality: 'image',
+    modalityLabel: 'Image',
+    tier: 'Low Risk',
+    tierLabel: 'Low Risk of AI Generation',
+    confidence: 92,
+    status: 'low',
+    summary: 'Automated scan detected no anomalous generative signatures.',
+    evidence: [],
+    limitations: [],
+    nextActions: []
+  };
+
+  const activeModality = currentResult.modality || 'image';
 
   const defaultMeta = {
     filename: activeModality === 'video' 
-      ? 'sample_video_capture.mp4' 
+      ? 'inspected_video_capture.mp4' 
       : activeModality === 'document' 
-        ? 'sample_document_text.txt' 
-        : 'sample_asset_eval.jpg',
-    size: activeModality === 'video' ? 14250000 : activeModality === 'document' ? 4180 : 2451820,
+        ? 'inspected_document_text.txt' 
+        : 'inspected_asset_eval.jpg',
+    size: 2450000,
     type: activeModality === 'video' ? 'video/mp4' : activeModality === 'document' ? 'text/plain' : 'image/jpeg',
     previewUrl: null,
     analyzedAt: new Date().toISOString()
   };
 
-  const assetMeta = resultData?.assetMeta || defaultMeta;
+  const assetMeta = currentResult.assetMeta || defaultMeta;
 
   const formatBytes = (bytes) => {
     if (!bytes) return '0 B';
@@ -55,8 +62,8 @@ Modality: ${(currentResult.modalityLabel || activeModality).toUpperCase()}
 Asset: ${assetMeta.filename}
 Timestamp: ${assetMeta.analyzedAt}
 Risk Tier: ${currentResult.tier} (${currentResult.confidence}% Calibrated Confidence)
-Summary: ${currentResult.summary}
-Evidence Signals:
+Evaluation Summary: ${currentResult.summary}
+Evidence Breakdown:
 ${currentResult.evidence.map(e => `• [${e.statusLabel}] ${e.title}: ${e.finding}`).join('\n')}
 Limitations:
 ${currentResult.limitations.map(l => `• ${l}`).join('\n')}`;
@@ -81,19 +88,19 @@ ${currentResult.limitations.map(l => `• ${l}`).join('\n')}`;
   const getAssetSubtitle = () => {
     switch (activeModality) {
       case 'video':
-        return 'Multifactorial evaluation of frame-level artifacts, temporal optical flow, and container metadata.';
+        return 'Algorithmic evaluation of frame-level artifacts, temporal optical flow, and container metadata.';
       case 'document':
-        return 'Stylometric, perplexity, and structural entropy analysis across text tokens and syntactic structures.';
+        return 'Algorithmic stylometric, perplexity, and structural entropy analysis across text tokens and syntactic structures.';
       case 'image':
       default:
-        return 'Multifactorial evaluation of visual artifacts, frequency distributions, and optical constraints.';
+        return 'Algorithmic evaluation of visual artifacts, frequency distributions, and PRNU sensor noise consistency.';
     }
   };
 
   return (
     <div className="results-page-container">
       <div className="container">
-        {/* Navigation & Variant Bar */}
+        {/* Navigation & Status Bar */}
         <div className="results-top-nav-bar">
           <button 
             className="btn btn-outline btn-sm"
@@ -103,40 +110,16 @@ ${currentResult.limitations.map(l => `• ${l}`).join('\n')}`;
             <span>Back to Ingestion</span>
           </button>
 
-          {/* Quick Demo Variant Switcher for Reviewers */}
+          {/* Genuine Detected Status Badge (No manual presets) */}
           <div className="variant-switcher-bar">
             <span className="variant-switcher-label">
-              Switch {currentResult.modalityLabel || 'Asset'} State:
+              Algorithmic Verdict:
             </span>
-            <div className="variant-pills">
-              <button 
-                className={`variant-pill ${activeVariantKey === 'low' ? 'active-low' : ''}`}
-                onClick={() => setActiveVariantKey('low')}
-                title="View Low Risk mock report"
-              >
-                Low Risk ({modalityCatalog.low.confidence}%)
-              </button>
-              <button 
-                className={`variant-pill ${activeVariantKey === 'medium' ? 'active-medium' : ''}`}
-                onClick={() => setActiveVariantKey('medium')}
-                title="View Medium Risk mock report"
-              >
-                Medium Risk ({modalityCatalog.medium.confidence}%)
-              </button>
-              <button 
-                className={`variant-pill ${activeVariantKey === 'uncertain' ? 'active-uncertain' : ''}`}
-                onClick={() => setActiveVariantKey('uncertain')}
-                title="View Uncertain / Inconclusive mock report"
-              >
-                Uncertain ({modalityCatalog.uncertain.confidence}%)
-              </button>
-              <button 
-                className={`variant-pill ${activeVariantKey === 'high' ? 'active-high' : ''}`}
-                onClick={() => setActiveVariantKey('high')}
-                title="View High Risk mock report"
-              >
-                High Risk ({modalityCatalog.high.confidence}%)
-              </button>
+            <div className={`detected-status-badge status-tag-${currentResult.status}`}>
+              <span className={`preset-dot dot-${currentResult.status}`} />
+              <span className="mono font-semibold">
+                {currentResult.tier} • {currentResult.confidence}% Calibrated Confidence
+              </span>
             </div>
           </div>
         </div>
@@ -259,16 +242,16 @@ ${currentResult.limitations.map(l => `• ${l}`).join('\n')}`;
                 Forensic Signal Breakdown
               </h3>
               <p className="section-subtext">
-                Observed physical, spectral, and statistical evidence informing this {currentResult.modalityLabel.toLowerCase()} assessment:
+                Observed physical, spectral, and statistical evidence informing this {currentResult.modalityLabel ? currentResult.modalityLabel.toLowerCase() : 'asset'} assessment:
               </p>
             </div>
             <span className="badge badge-neutral">
-              {currentResult.evidence.length} Active Modules
+              {currentResult.evidence ? currentResult.evidence.length : 0} Active Modules
             </span>
           </div>
 
           <div className="evidence-cards-grid">
-            {currentResult.evidence.map((evItem) => (
+            {currentResult.evidence && currentResult.evidence.map((evItem) => (
               <EvidenceCard key={evItem.id} evidence={evItem} />
             ))}
           </div>

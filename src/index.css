@@ -1309,6 +1309,41 @@ code, .mono {
   letter-spacing: 0.03em;
 }
 
+.detected-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background-color: var(--bg-surface-elevated);
+  font-size: 0.8125rem;
+}
+
+.status-tag-low {
+  border-color: var(--risk-low-border);
+  background-color: var(--risk-low-bg);
+  color: var(--risk-low-fg);
+}
+
+.status-tag-medium {
+  border-color: var(--risk-medium-border);
+  background-color: var(--risk-medium-bg);
+  color: var(--risk-medium-fg);
+}
+
+.status-tag-uncertain {
+  border-color: var(--risk-uncertain-border);
+  background-color: var(--risk-uncertain-bg);
+  color: var(--risk-uncertain-fg);
+}
+
+.status-tag-high {
+  border-color: var(--risk-high-border);
+  background-color: var(--risk-high-bg);
+  color: var(--risk-high-fg);
+}
+
 .variant-pills {
   display: flex;
   gap: 6px;
